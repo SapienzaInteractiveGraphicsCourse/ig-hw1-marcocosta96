@@ -1,162 +1,160 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"/></head>
-<script id="vertex-shader" type="x-shader/x-vertex">
+    <head><meta charset="utf-8"/></head>
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        precision mediump float;
+        attribute  vec4 vPosition;
+        attribute  vec4 vNormal;
+
+        varying vec4 fColor;
+
+        uniform mat4 modelViewMatrix;
+        uniform mat4 projectionMatrix;
+        uniform mat4 scalingMatrix;
+        uniform mat4 translMatrix;
+
+        uniform vec4 ambientProduct, diffuseProduct, specularProduct;
+        uniform vec4 lightPosition;
+        uniform float shininess;
+        varying vec3 N,L,E;
+        uniform bool changeShading;
+
+        void main() {
+            vec3 pos = -(modelViewMatrix * vPosition).xyz;
+
+            if(changeShading) {
+                vec3 light = lightPosition.xyz;
+                L = normalize(light - pos);
+                E = normalize(-pos);
+                vec3 H = normalize(L+E);
+                N = normalize((modelViewMatrix*vNormal).xyz);
+
+                vec4 ambient = ambientProduct;
+
+                float Kd = max(dot(L, N), 0.0);
+                vec4 diffuse = Kd*diffuseProduct;
+
+                float Ks = pow(max(dot(N, H), 0.0), shininess);
+                vec4 specular = Ks*specularProduct;
+
+                if (dot(L, N) < 0.0) {
+                    specular = vec4(0.0, 0.0, 0.0, 1.0);
+                }
+
+                fColor = ambient + diffuse + specular;
+                fColor.a = 1.0;
+
+                gl_Position = projectionMatrix*modelViewMatrix*scalingMatrix*translMatrix*vPosition;
+            }
+            else {
+                vec3 light = lightPosition.xyz;
+                L = normalize(light - pos);
+                E = normalize(-pos);
+                vec3 H = normalize(L+E);
+                N = normalize((modelViewMatrix*vNormal).xyz);
+                gl_Position = projectionMatrix*modelViewMatrix*scalingMatrix*translMatrix*vPosition;
+            }
+
+        }
+    </script>
+
+    <script id="fragment-shader" type="x-shader/x-fragment">
+
     precision mediump float;
-    attribute  vec4 vPosition;
-    attribute  vec4 vNormal;
 
     varying vec4 fColor;
 
-    uniform mat4 modelViewMatrix;
-    uniform mat4 projectionMatrix;
-    uniform mat4 scalingMatrix;
-    uniform mat4 translMatrix;
-
     uniform vec4 ambientProduct, diffuseProduct, specularProduct;
-    uniform vec4 lightPosition;
     uniform float shininess;
     varying vec3 N,L,E;
     uniform bool changeShading;
 
     void main() {
-        vec3 pos = -(modelViewMatrix * vPosition).xyz;
-
         if(changeShading) {
-            vec3 light = lightPosition.xyz;
-            L = normalize(light - pos);
-            E = normalize(-pos);
-            vec3 H = normalize(L+E);
-            N = normalize((modelViewMatrix*vNormal).xyz);
-
-            vec4 ambient = ambientProduct;
-
-            float Kd = max(dot(L, N), 0.0);
-            vec4 diffuse = Kd*diffuseProduct;
-
-            float Ks = pow(max(dot(N, H), 0.0), shininess);
-            vec4 specular = Ks*specularProduct;
-
-            if (dot(L, N) < 0.0) {
-                specular = vec4(0.0, 0.0, 0.0, 1.0);
-            }
-
-            fColor = ambient + diffuse + specular;
-            fColor.a = 1.0;
-
-            gl_Position = projectionMatrix*modelViewMatrix*scalingMatrix*translMatrix*vPosition;
+            gl_FragColor = fColor;
         }
         else {
-            vec3 light = lightPosition.xyz;
-            L = normalize(light - pos);
-            E = normalize(-pos);
-            vec3 H = normalize(L+E);
-            N = normalize((modelViewMatrix*vNormal).xyz);
-            gl_Position = projectionMatrix*modelViewMatrix*scalingMatrix*translMatrix*vPosition;
+            vec3 H = normalize( L + E );
+            vec4 ambient = ambientProduct;
+
+            float Kd = max( dot(L, N), 0.0 );
+            vec4 diffuse = Kd*diffuseProduct;
+
+            float Ks = pow( max(dot(N, H), 0.0), shininess );
+            vec4 specular = Ks * specularProduct;
+
+            if( dot(L, N) < 0.0 ) specular = vec4(0.0, 0.0, 0.0, 1.0);
+
+            vec4 fColor = ambient + diffuse +specular;
+            fColor.a = 1.0;
+            gl_FragColor = fColor;
         }
-        
+
     }
-</script>
+    </script>
 
-<script id="fragment-shader" type="x-shader/x-fragment">
+    <script type="text/javascript" src="Common/webgl-utils.js"></script>
+    <script type="text/javascript" src="Common/initShaders.js"></script>
+    <script type="text/javascript" src="Common/MV.js"></script>
+    <script type="text/javascript" src="homework1.js"></script>
 
-precision mediump float;
+    <body>
+        <canvas id="gl-canvas" width="1024" height="512">
+            Oops ... your browser doesn't support the HTML5 canvas element
+        </canvas>
+    </body>
 
-varying vec4 fColor;
-
-uniform vec4 ambientProduct, diffuseProduct, specularProduct;
-uniform float shininess;
-varying vec3 N,L,E;
-uniform bool changeShading;
-
-void
-main()
-{
-    if(changeShading) {
-        gl_FragColor = fColor;
-    }
-    else {
-        vec3 H = normalize( L + E );
-        vec4 ambient = ambientProduct;
-        
-        float Kd = max( dot(L, N), 0.0 );
-        vec4 diffuse = Kd*diffuseProduct;
-
-        float Ks = pow( max(dot(N, H), 0.0), shininess );
-        vec4 specular = Ks * specularProduct;
-
-        if( dot(L, N) < 0.0 ) specular = vec4(0.0, 0.0, 0.0, 1.0);
-
-        vec4 fColor = ambient + diffuse +specular;
-        fColor.a = 1.0;
-        gl_FragColor = fColor;
-    }
-
-}
-</script>
-
-<script type="text/javascript" src="Common/webgl-utils.js"></script>
-<script type="text/javascript" src="Common/initShaders.js"></script>
-<script type="text/javascript" src="Common/MV.js"></script>
-<script type="text/javascript" src="homework1.js"></script>
-
-<body>
-<canvas id="gl-canvas" width="1024" height="512">
-Oops ... your browser doesn't support the HTML5 canvas element
-</canvas>
-</body>
-
-<div>
-zNear .01<input id="zNearSlider" type="range"
- min=".01" max="3" step="0.1" value="0.3" />
- 3
-</div>
-<div>
-zFar 3<input id="zFarSlider" type="range"
- min="3" max="10" step="3.0" value="3" />
- 10
-</div>
-<div>
-radius 0.05<input id="radiusSlider" type="range"
- min="0.05" max="10" step="0.1" value="2" />
- 10
-</div>
-<div>
-theta -90<input id="thetaSlider" type="range"
- min="-90" max="90" step="5" value="0" />
- 90
-</div>
-<div>
-phi -90<input id="phiSlider" type="range"
- min="-90" max="90" step="5" value="0" />
- 90
-</div>
-<div>
-fov 10<input id="fovSlider" type="range"
- min="10" max="120" step="5" value="45" />
- 120
-</div>
-<div>
-scale x0.2<input id="scaleSlider" type="range"
- min="0.2" max="3" step="0.2" value="1" />
- x3
-</div>
-<div>
-translate over X -5<input id="traslationSliderX" type="range"
- min="-5.0" max="5.0" step="1" value="0" />
- 5
-</div>
-translate over Y -5<input id="traslationSliderY" type="range"
- min="-5.0" max="5.0" step="1" value="0" />
- 5
-</div>
-<div>
-translate over Z -5<input id="traslationSliderZ" type="range"
- min="-5.0" max="5.0" step="1" value="0" />
- 5
-</div>
-<div>
-    <button id="ShadingButton">Change Shading</button>
-</div>
+    <div>
+        zNear .01<input id="zNearSlider" type="range"
+        min=".01" max="3" step="0.1" value="0.3" />
+        3
+    </div>
+    <div>
+        zFar 3<input id="zFarSlider" type="range"
+        min="3" max="10" step="3.0" value="3" />
+        10
+    </div>
+    <div>
+        radius 0.05<input id="radiusSlider" type="range"
+        min="0.05" max="10" step="0.1" value="2" />
+        10
+    </div>
+    <div>
+        theta -90<input id="thetaSlider" type="range"
+        min="-90" max="90" step="5" value="0" />
+        90
+    </div>
+    <div>
+        phi -90<input id="phiSlider" type="range"
+        min="-90" max="90" step="5" value="0" />
+        90
+    </div>
+    <div>
+        fov 10<input id="fovSlider" type="range"
+        min="10" max="120" step="5" value="45" />
+        120
+    </div>
+    <div>
+        scale x0.2<input id="scaleSlider" type="range"
+        min="0.2" max="3" step="0.2" value="1" />
+        x3
+    </div>
+    <div>
+        translate over X -5<input id="traslationSliderX" type="range"
+        min="-5.0" max="5.0" step="1" value="0" />
+        5
+    </div>
+        translate over Y -5<input id="traslationSliderY" type="range"
+        min="-5.0" max="5.0" step="1" value="0" />
+        5
+    </div>
+    <div>
+        translate over Z -5<input id="traslationSliderZ" type="range"
+        min="-5.0" max="5.0" step="1" value="0" />
+        5
+    </div>
+    <div>
+        <button id="ShadingButton">Change Shading</button>
+    </div>
 
 </html>

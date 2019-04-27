@@ -43,8 +43,8 @@ var vertexColors = [
 var near = 0.3;
 var far = 3.0;
 var radius = 2.0;
-var theta  = 0.0;
-var phi    = 0.0;
+var theta  = 45.0;
+var phi    = 45.0;
 var dr = 5.0 * Math.PI/180.0;
 
 var  fovy = 45.0;  // Field-of-view in Y direction angle (in degrees)
@@ -101,8 +101,7 @@ function quad(a, b, c, d) {
     normalsArray.push(normal);
 }
 
-function colorCube()
-{
+function colorCube() {
     quad( 1, 0, 3, 2 );
     quad( 2, 3, 7, 6 );
     quad( 3, 0, 4, 7 );
@@ -235,16 +234,14 @@ var render = function() {
     requestAnimFrame(render);
 }
 
-function renderSinglePart(startX, startY, lenghtWidth, lenghtHeight, projMatrix)
-{
+function renderSinglePart(startX, startY, lenghtWidth, lenghtHeight, projMatrix) {
     gl.enable(gl.SCISSOR_TEST);
     gl.viewport(startX, startY, lenghtWidth, lenghtHeight);
     gl.scissor(startX, startY, lenghtWidth, lenghtHeight);
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    eye = vec3(radius*Math.sin(theta)*Math.cos(phi),
-                radius*Math.sin(theta)*Math.sin(phi), radius*Math.cos(theta));
+    eye = vec3(radius*Math.sin(theta)*Math.cos(phi), radius*Math.sin(theta)*Math.sin(phi), radius*Math.cos(theta));
     modelViewMatrix = lookAt(eye, at , up);
     scalingMatrix = scalem(scaling, scaling, scaling);
     translMatrix = translate(translX, translY, translZ);
