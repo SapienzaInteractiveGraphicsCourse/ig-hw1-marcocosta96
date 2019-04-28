@@ -76,6 +76,49 @@ var eye;
 const at = vec3(0.0, 0.0, 0.0);
 const up = vec3(0.0, 1.0, 0.0);
 
+var texSize = 64;
+
+// Create a checkerboard pattern using floats
+var image1 = new Array()
+for (var i =0; i<texSize; i++)
+    image1[i] = new Array();
+for (var i =0; i<texSize; i++)
+    for ( var j = 0; j < texSize; j++)
+        image1[i][j] = new Float32Array(4);
+for (var i =0; i<texSize; i++)
+    for (var j=0; j<texSize; j++) {
+        var c = (((i & 0x8) == 0) ^ ((j & 0x8)  == 0));
+        image1[i][j] = [c, c, c, 1];
+    }
+
+// Convert floats to ubytes for texture
+var image2 = new Uint8Array(4*texSize*texSize);
+for ( var i = 0; i < texSize; i++ )
+    for ( var j = 0; j < texSize; j++ )
+       for(var k =0; k<4; k++)
+            image2[4*texSize*i+4*j+k] = 255*image1[i][j][k];
+
+var texCoordsArray = [];
+var texCoord = [
+    vec2(0,0),
+    vec2(0,1),
+    vec2(1,1),
+    vec2(1,0)
+];
+
+function configureTexture(image) {
+    var texture = gl.createTexture();
+    gl.activeTexture( gl.TEXTURE0 );
+    gl.bindTexture( gl.TEXTURE_2D, texture );
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, texSize, texSize, 0,
+        gl.RGBA, gl.UNSIGNED_BYTE, image);
+    gl.generateMipmap( gl.TEXTURE_2D );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
+        gl.NEAREST_MIPMAP_LINEAR );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
+}
+
 function quad(a, b, c, d) {
     var t1 = subtract(vertices[b], vertices[a]);
     var t2 = subtract(vertices[c], vertices[b]);
@@ -84,21 +127,27 @@ function quad(a, b, c, d) {
 
     pointsArray.push(vertices[a]);
     normalsArray.push(normal);
+    texCoordsArray.push(texCoord[0]);
 
     pointsArray.push(vertices[b]);
     normalsArray.push(normal);
+    texCoordsArray.push(texCoord[1]);
 
     pointsArray.push(vertices[c]);
     normalsArray.push(normal);
+    texCoordsArray.push(texCoord[2]);
 
     pointsArray.push(vertices[a]);
     normalsArray.push(normal);
+    texCoordsArray.push(texCoord[0]);
 
     pointsArray.push(vertices[c]);
     normalsArray.push(normal);
+    texCoordsArray.push(texCoord[2]);
 
     pointsArray.push(vertices[d]);
     normalsArray.push(normal);
+    texCoordsArray.push(texCoord[3]);
 }
 
 function colorCube() {
@@ -148,7 +197,16 @@ window.onload = function init() {
     gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vPosition );
 
-    //shadingModelLoc = gl.getUniformLocation( program, "shadingModel" );
+    var tBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer);
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(texCoordsArray), gl.STATIC_DRAW );
+
+    var vTexCoord = gl.getAttribLocation( program, "vTexCoord");
+    gl.vertexAttribPointer(vTexCoord, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vTexCoord);
+
+    configureTexture(image2);
+
     modelViewMatrixLoc = gl.getUniformLocation( program, "modelViewMatrix" );
     projectionMatrixLoc = gl.getUniformLocation( program, "projectionMatrix" );
     scalingMatrixLoc = gl.getUniformLocation(program, "scalingMatrix");
@@ -160,38 +218,44 @@ window.onload = function init() {
 
     // sliders for viewing parameters
 
-    document.getElementById("zFarSlider").onchange = function(event) {
+    document.getElementById("zFarSlider").oninput = function(event) {
         far = event.target.value;
     };
-    document.getElementById("zNearSlider").onchange = function(event) {
+    document.getElementById("zNearSlider").oninput = function(event) {
         near = event.target.value;
     };
-    document.getElementById("radiusSlider").onchange = function(event) {
+    document.getElementById("radiusSlider").oninput = function(event) {
        radius = event.target.value;
     };
-    document.getElementById("thetaSlider").onchange = function(event) {
+    document.getElementById("thetaSlider").oninput = function(event) {
         theta = event.target.value* Math.PI/180.0;
     };
-    document.getElementById("phiSlider").onchange = function(event) {
+    document.getElementById("phiSlider").oninput = function(event) {
         phi = event.target.value* Math.PI/180.0;
     };
-    document.getElementById("fovSlider").onchange = function(event) {
+    document.getElementById("fovSlider").oninput = function(event) {
         fovy = event.target.value;
     };
-    document.getElementById("scaleSlider").onchange = function(event) {
+    document.getElementById("scaleSlider").oninput = function(event) {
         scaling = event.target.value;
     };
-    document.getElementById("traslationSliderX").onchange = function(event) {
+    document.getElementById("traslationSliderX").oninput = function(event) {
         translX = event.target.value;
     };
-    document.getElementById("traslationSliderY").onchange = function(event) {
+    document.getElementById("traslationSliderY").oninput = function(event) {
         translY = event.target.value;
     };
-    document.getElementById("traslationSliderZ").onchange = function(event) {
+    document.getElementById("traslationSliderZ").oninput = function(event) {
         translZ = event.target.value;
     };
     document.getElementById("ShadingButton").onclick = function(){
         changeShading = !changeShading;
+        if(changeShading) {
+            document.getElementById("currentShadingModel").innerText = "Gouraud";
+        }
+        else {
+            document.getElementById("currentShadingModel").innerText = "Phong";
+        }
     };
 
     gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"),flatten(ambientProduct));
