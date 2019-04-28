@@ -212,7 +212,7 @@ window.onload = function init() {
         document.getElementById('labelNear').innerText = this.valueAsNumber;
     };
     document.getElementById("FarSlider").oninput = function(event) {
-        ar = this.valueAsNumber;
+        far = this.valueAsNumber;
         document.getElementById('labelFar').innerText = this.valueAsNumber;
     };
     document.getElementById("thetaSlider").oninput = function(event) {
