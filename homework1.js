@@ -9,6 +9,8 @@ var numChecks = 8;
 
 var program;
 
+var c;
+
 var flag = true;
 
 var pointsArray = [];
