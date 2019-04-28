@@ -185,6 +185,11 @@ window.onload = function init() {
     gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vNormal);
 
+    modelViewMatrixLoc = gl.getUniformLocation( program, "modelViewMatrix" );
+    projectionMatrixLoc = gl.getUniformLocation( program, "projectionMatrix" );
+    scalingMatrixLoc = gl.getUniformLocation(program, "scalingMatrix");
+    translationMatrixLoc = gl.getUniformLocation(program, "translMatrix");
+
     var ambientProduct = mult(lightAmbient, materialAmbient);
     var diffuseProduct = mult(lightDiffuse, materialDiffuse);
     var specularProduct = mult(lightSpecular, materialSpecular);
@@ -221,6 +226,10 @@ window.onload = function init() {
     document.getElementById("ScaleSlider").oninput = function() {
         scaling = this.valueAsNumber;
         document.getElementById('labelScaling').innerText = this.valueAsNumber;
+    };
+    document.getElementById("FovSlider").oninput = function() {
+        fovy = this.valueAsNumber;
+        document.getElementById('labelFov').innerText = this.valueAsNumber;
     };
     document.getElementById("TranslateXSlider").oninput = function() {
         translX = this.valueAsNumber;
@@ -259,7 +268,6 @@ window.onload = function init() {
 };
 
 var render = function() {
-    gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     var translationMatrix = [
         1.0, 0.0, 0.0, 0.0,
@@ -275,10 +283,11 @@ var render = function() {
         0.0, 0.0, 0.0, 1.0
     ];
 
-    //camera position
+    //Camera
     eye = vec3(radius * Math.sin(phi), radius * Math.sin(theta), radius * Math.cos(phi));
     modelViewMatrix = lookAt(eye, at , up);
     projectionMatrix = ortho(-1.0, 1.0, -1.0, 1.0, near, far);
+    gl.clearColor(0.2, 0.2, 0.2, 1);
 
     modelViewMatrixLoc = gl.getUniformLocation(program, "modelViewMatrix");
     projectionMatrixLoc = gl.getUniformLocation(program, "projectionMatrix");
@@ -289,23 +298,36 @@ var render = function() {
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
     gl.uniformMatrix4fv(scalingMatrixLoc, false, flatten(scalingMatrix));
     gl.uniformMatrix4fv(translationMatrixLoc, false, translationMatrix);
-    gl.uniform1i(gl.getUniformLocation(program, "shadingModel"), shadingModel);
 
     //Divide canvas in two parts
+    const width = gl.canvas.width;
+    const height = gl.canvas.height;
+    const displayWidth = gl.canvas.clientWidth;
+    const displayHeight = gl.canvas.clientHeight;
+    const dispWidth = displayWidth / 2;
+    const dispHeight = displayHeight;
+    const aspect = dispWidth/dispHeight;
+
     gl.enable(gl.SCISSOR_TEST);
-    var width = gl.canvas.width;
-    var height = gl.canvas.height;
-    gl.scissor(0,  height/2, width / 2, height/2);
-    gl.viewport(0,  height/2, width / 2, height/2);
+
+    //Render left part
+    gl.clearColor(0.1, 0.1, 0.1, 1);
+    gl.scissor(0,  0, width/2, height);
+    gl.viewport(0,  0, width/2, height);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLES, 0, numVertices);
 
-    projectionMatrix = perspective(fovy, canvas.width/canvas.height, near, far);
+    //Render right part
+    projectionMatrix = perspective(fovy, aspect, near, far);
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
 
-    gl.scissor(width/2, height/2, width/2, height/2);
-    gl.viewport(width/2, height/2, width/2, height/2);
-
+    gl.clearColor(0.2, 0.2, 0.2, 1);
+    gl.scissor(width/2, 0, width/2, height);
+    gl.viewport(width/2, 0, width/2, height);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLES, 0, numVertices);
+
+    gl.uniform1i(gl.getUniformLocation(program, "shadingModel"), shadingModel);
 
     requestAnimationFrame(render);
 }
